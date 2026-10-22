@@ -1,0 +1,122 @@
+import sqlite3
+import os
+
+# ==========================================
+# CONFIGURACIÓN
+# ==========================================
+
+CARPETA_BD = "database"
+RUTA_BD = os.path.join(CARPETA_BD, "empleados.db")
+
+
+# ==========================================
+# MÓDULO 1. CREACIÓN DE LA BASE DE DATOS
+# ==========================================
+
+def crear_bd():
+    os.makedirs(CARPETA_BD, exist_ok=True)
+
+    conexion = sqlite3.connect(RUTA_BD)
+    cursor = conexion.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS empleado (
+            curp TEXT PRIMARY KEY,
+            nombre TEXT NOT NULL,
+            apellido TEXT NOT NULL,
+            calle TEXT,
+            colonia TEXT,
+            telefono TEXT
+        )
+    """)
+
+    conexion.commit()
+    conexion.close()
+
+    print("Base de datos EMPLEADOS creada correctamente.")
+
+
+# ==========================================
+# MÓDULO 2. ALTAS DE EMPLEADOS
+# ==========================================
+
+def alta_empleado():
+    print("\n===== ALTA DE EMPLEADO - ACME SA DE CV =====")
+
+    curp = input("CURP: ").strip().upper()
+    nombre = input("Nombre: ").strip()
+    apellido = input("Apellido: ").strip()
+    calle = input("Calle: ").strip()
+    colonia = input("Colonia: ").strip()
+    telefono = input("Teléfono: ").strip()
+
+    if not curp or not nombre or not apellido:
+        print("Error: CURP, nombre y apellido son obligatorios.")
+        return
+
+    if len(curp) != 18:
+        print("Error: la CURP debe tener 18 caracteres.")
+        return
+
+    conexion = sqlite3.connect(RUTA_BD)
+    cursor = conexion.cursor()
+
+    try:
+        cursor.execute("""
+            INSERT INTO empleado (
+                curp,
+                nombre,
+                apellido,
+                calle,
+                colonia,
+                telefono
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (curp, nombre, apellido, calle, colonia, telefono))
+
+        conexion.commit()
+        print("Empleado registrado correctamente.")
+
+    except sqlite3.IntegrityError:
+        print("Error: la CURP ya existe.")
+
+    except sqlite3.Error as error:
+        print(f"Error al registrar al empleado: {error}")
+
+    finally:
+        conexion.close()
+
+
+# ==========================================
+# MENÚ PRINCIPAL
+# ==========================================
+
+def menu():
+    while True:
+        print("\n===== ACME SA DE CV - EMPLEADOS =====")
+        print("1. Crear base de datos")
+        print("2. Dar de alta empleado")
+        print("3. Salir")
+
+        opcion = input("Elige una opción: ").strip()
+
+        if opcion == "1":
+            crear_bd()
+        elif opcion == "2":
+            if not os.path.exists(RUTA_BD):
+                print("Primero debes crear la base de datos (opción 1).")
+            else:
+                alta_empleado()
+        elif opcion == "3":
+            print("Hasta luego.")
+            break
+        else:
+            print("Opción no válida.")
+
+
+# ==========================================
+# PROGRAMA PRINCIPAL
+# ==========================================
+
+if __name__ == "__main__":
+    menu()
